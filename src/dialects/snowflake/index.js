@@ -33,7 +33,7 @@ export class SnowflakeDialect extends AbstractDialect {
       check: false,
     },
     indexViaAlter: true,
-    indexHints: true,
+    indexHints: false,
     NUMERIC: true,
     // disable for now, need more work to enable the GEOGRAPHY MAPPING
     // GEOMETRY: true,
