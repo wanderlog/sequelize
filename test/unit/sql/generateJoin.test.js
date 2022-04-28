@@ -3,6 +3,7 @@
 const Support = require('../support'),
   DataTypes = require('sequelize/lib/data-types'),
   Sequelize = require('sequelize/lib/sequelize'),
+  IndexHints = require('sequelize/lib/index-hints'),
   util = require('util'),
   _ = require('lodash'),
   expectsql = Support.expectsql,
@@ -32,7 +33,10 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           }
         );
 
-        return expectsql(`${join.join} ${join.body} ON ${join.condition}`, expectation);
+        return expectsql(
+          `${join.join} ${join.body} ${join.indexHints ? `${join.indexHints} ` : ''}ON ${join.condition}`,
+          expectation
+        );
       });
     };
 
@@ -120,6 +124,32 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         default: 'INNER JOIN [company] AS [Company] ON [User].[company_id] = [Company].[id] OR [Company].[public] = true',
         sqlite: 'INNER JOIN `company` AS `Company` ON `User`.`company_id` = `Company`.`id` OR `Company`.`public` = 1',
         oracle: 'INNER JOIN "company" "Company" ON "User"."company_id" = "Company"."id" OR "Company"."public" = \'1\'',
+        mssql: 'INNER JOIN [company] AS [Company] ON [User].[company_id] = [Company].[id] OR [Company].[public] = 1'
+      }
+    );
+
+    testsql(
+      'include[0]',
+      {
+        model: User,
+        include: [
+          {
+            association: User.Company,
+            where: { public: true },
+            or: true,
+            indexHints: [
+              { type: IndexHints.USE, values: ['index_project_on_name', 'index_project_on_name_and_foo'] }
+            ]
+          }
+        ]
+      },
+      {
+        default: 'INNER JOIN [company] AS [Company] ON [User].[company_id] = [Company].[id] OR [Company].[public] = true',
+        mysql: 'INNER JOIN `company` AS `Company` USE INDEX (`index_project_on_name`,`index_project_on_name_and_foo`) ON `User`.`company_id` = `Company`.`id` OR `Company`.`public` = true',
+        mariadb: 'INNER JOIN `company` AS `Company` USE INDEX (`index_project_on_name`,`index_project_on_name_and_foo`) ON `User`.`company_id` = `Company`.`id` OR `Company`.`public` = true',
+        snowflake: 'INNER JOIN "company" AS "Company" USE INDEX ("index_project_on_name","index_project_on_name_and_foo") ON "User"."company_id" = "Company"."id" OR "Company"."public" = true',
+        ibmi: 'INNER JOIN "company" AS "Company" ON "User"."company_id" = "Company"."id" OR "Company"."public" = 1',
+        sqlite: 'INNER JOIN `company` AS `Company` ON `User`.`company_id` = `Company`.`id` OR `Company`.`public` = 1',
         mssql: 'INNER JOIN [company] AS [Company] ON [User].[company_id] = [Company].[id] OR [Company].[public] = 1'
       }
     );
@@ -231,7 +261,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           }
         ]
       },
-      { 
+      {
         default: 'LEFT OUTER JOIN [profession] AS [Company->Owner->Profession] ON [Company->Owner].[professionId] = [Company->Owner->Profession].[id]',
         oracle: 'LEFT OUTER JOIN "profession" "Company->Owner->Profession" ON "Company->Owner"."professionId" = "Company->Owner->Profession"."id"'
       }
@@ -321,7 +351,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             }
           }
         ]
-      }, 
+      },
       {
         default: 'LEFT OUTER JOIN [task] AS [Tasks] ON ([User].[id_user] = [Tasks].[user_id] OR [Tasks].[user_id] = 2)',
         oracle: 'LEFT OUTER JOIN "task" "Tasks" ON ("User"."id_user" = "Tasks"."user_id" OR "Tasks"."user_id" = 2)'
@@ -338,7 +368,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             on: { 'user_id': { [Op.col]: 'User.alternative_id' } }
           }
         ]
-      }, 
+      },
       {
         default: 'LEFT OUTER JOIN [task] AS [Tasks] ON [Tasks].[user_id] = [User].[alternative_id]',
         oracle: 'LEFT OUTER JOIN "task" "Tasks" ON "Tasks"."user_id" = "User"."alternative_id"'

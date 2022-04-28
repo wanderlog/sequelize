@@ -641,7 +641,7 @@ export type Includeable = ModelType | Association | IncludeOptions | { all: true
 /**
  * Complex include options
  */
-export interface IncludeOptions extends Filterable<any>, Projectable, Paranoid {
+export interface IncludeOptions extends Filterable<any>, Projectable, Paranoid, IndexHintable {
   /**
    * Mark the include as duplicating, will prevent a subquery from being used.
    */
