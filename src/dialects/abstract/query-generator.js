@@ -1744,11 +1744,17 @@ https://github.com/sequelize/sequelize/discussions/15694`);
       }
     }
 
+    const indexHintsSubstring = joinQuery.indexHints ? ` ${joinQuery.indexHints}` : '';
+
     if (include.subQuery && topLevelInfo.subQuery) {
       if (requiredMismatch && subChildIncludes.length > 0) {
-        joinQueries.subQuery.push(` ${joinQuery.join} ( ${joinQuery.body}${subChildIncludes.join('')} ) ON ${joinQuery.condition}`);
+        joinQueries.subQuery.push(
+          ` ${joinQuery.join} ( ${joinQuery.body}${subChildIncludes.join('')} )${indexHintsSubstring} ON ${joinQuery.condition}`
+        );
       } else {
-        joinQueries.subQuery.push(` ${joinQuery.join} ${joinQuery.body} ON ${joinQuery.condition}`);
+        joinQueries.subQuery.push(
+          ` ${joinQuery.join} ${joinQuery.body}${indexHintsSubstring} ON ${joinQuery.condition}`
+        );
         if (subChildIncludes.length > 0) {
           joinQueries.subQuery.push(subChildIncludes.join(''));
         }
@@ -1756,9 +1762,13 @@ https://github.com/sequelize/sequelize/discussions/15694`);
       joinQueries.mainQuery.push(mainChildIncludes.join(''));
     } else {
       if (requiredMismatch && mainChildIncludes.length > 0) {
-        joinQueries.mainQuery.push(` ${joinQuery.join} ( ${joinQuery.body}${mainChildIncludes.join('')} ) ON ${joinQuery.condition}`);
+        joinQueries.mainQuery.push(
+          ` ${joinQuery.join} ( ${joinQuery.body}${mainChildIncludes.join('')} )${indexHintsSubstring} ON ${joinQuery.condition}`
+        );
       } else {
-        joinQueries.mainQuery.push(` ${joinQuery.join} ${joinQuery.body} ON ${joinQuery.condition}`);
+        joinQueries.mainQuery.push(
+          ` ${joinQuery.join} ${joinQuery.body}${indexHintsSubstring} ON ${joinQuery.condition}`
+        );
         if (mainChildIncludes.length > 0) {
           joinQueries.mainQuery.push(mainChildIncludes.join(''));
         }
@@ -1886,6 +1896,7 @@ https://github.com/sequelize/sequelize/discussions/15694`);
     return {
       join: include.required ? 'INNER JOIN' : include.right && this._dialect.supports['RIGHT JOIN'] ? 'RIGHT OUTER JOIN' : 'LEFT OUTER JOIN',
       body: this.quoteTable(tableRight, asRight),
+      indexHints: include.indexHints ? this.indexHintsFragment(include.indexHints) : '',
       condition: joinOn,
       attributes: {
         main: [],
@@ -1969,6 +1980,7 @@ https://github.com/sequelize/sequelize/discussions/15694`);
     const tableTarget = includeAs.internalAs;
     const identTarget = association.foreignIdentifierField;
     const attrTarget = association.targetKeyField;
+    const indexHints = through.indexHints ? this.indexHintsFragment(through.indexHints) : '';
 
     const joinType = include.required ? 'INNER JOIN' : include.right && this._dialect.supports['RIGHT JOIN'] ? 'RIGHT OUTER JOIN' : 'LEFT OUTER JOIN';
     let joinBody;
@@ -2026,7 +2038,12 @@ https://github.com/sequelize/sequelize/discussions/15694`);
     this.aliasAs(includeAs.internalAs, topLevelInfo);
 
     // Generate a wrapped join so that the through table join can be dependent on the target join
-    joinBody = `( ${this.quoteTable(throughTable, throughAs)} INNER JOIN ${this.quoteTable(include.model.getTableName(), includeAs.internalAs)} ON ${targetJoinOn}`;
+    joinBody = `( ${this.quoteTable(throughTable, throughAs)} INNER JOIN ${this.quoteTable(include.model.getTableName(), includeAs.internalAs)}`;
+    if (indexHints) {
+      joinBody += ` ${indexHints}`;
+    }
+
+    joinBody += ` ON ${targetJoinOn}`;
     if (throughWhere) {
       joinBody += ` AND ${throughWhere}`;
     }
@@ -2047,6 +2064,7 @@ https://github.com/sequelize/sequelize/discussions/15694`);
     return {
       join: joinType,
       body: joinBody,
+      indexHints: include.indexHints ? this.indexHintsFragment(include.indexHints) : '',
       condition: joinCondition,
       attributes
     };
@@ -2271,15 +2289,37 @@ https://github.com/sequelize/sequelize/discussions/15694`);
       fragment += ` ${this.getAliasToken()} ${mainTableAs}`;
     }
 
-    if (options.indexHints && this._dialect.supports.indexHints) {
-      for (const hint of options.indexHints) {
-        if (IndexHints[hint.type]) {
-          fragment += ` ${IndexHints[hint.type]} INDEX (${hint.values.map(indexName => this.quoteIdentifiers(indexName)).join(',')})`;
-        }
+    if (options.indexHints) {
+      const indexHints = this.indexHintsFragment(options.indexHints);
+      if (indexHints) {
+        fragment += ` ${indexHints}`;
       }
     }
 
     return fragment;
+  }
+
+  /**
+   * Return an SQL fragment for index hints.
+   *
+   * @param {Array} indexHints
+   * @returns {string} Index hint like "USE INDEX (my_index)". Returns an empty
+   *                   string if the database engine doesn't support it.
+   */
+  indexHintsFragment(indexHints) {
+    if (!this._dialect.supports.indexHints) {
+      return '';
+    }
+
+    const fragments = [];
+
+    for (const hint of indexHints) {
+      if (IndexHints[hint.type]) {
+        fragments.push(`${IndexHints[hint.type]} INDEX (${hint.values.map(indexName => this.quoteIdentifiers(indexName)).join(',')})`);
+      }
+    }
+
+    return fragments.join(' ');
   }
 
   /**

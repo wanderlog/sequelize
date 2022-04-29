@@ -713,6 +713,11 @@ export interface IncludeOptions extends Filterable<any>, Projectable, Paranoid {
    * Use sub queries. This should only be used if you know for sure the query does not result in a cartesian product.
    */
   subQuery?: boolean;
+
+  /**
+   * MySQL and MariaDB only.
+   */
+  indexHints?: IndexHint[];
 }
 
 type OrderItemAssociation = Association | ModelStatic<Model> | { model: ModelStatic<Model>; as: string } | string
