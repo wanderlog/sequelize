@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/associations/index.ts"],
+  "sourcesContent": ["export * from './base';\nexport * from './belongs-to';\nexport * from './has-one';\nexport * from './has-many';\nexport * from './belongs-to-many';\n"],
+  "mappings": ";;;;;;;;;;;;;;AAAA;AAAA;AAAA,iCAAc,mBAAd;AACA,iCAAc,yBADd;AAEA,iCAAc,sBAFd;AAGA,iCAAc,uBAHd;AAIA,iCAAc,8BAJd;",
+  "names": []
+}

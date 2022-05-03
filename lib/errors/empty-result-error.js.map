@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/errors/empty-result-error.ts"],
+  "sourcesContent": ["import type { ErrorOptions } from './base-error';\nimport BaseError from './base-error';\n\n/**\n * Thrown when a record was not found, Usually used with rejectOnEmpty mode (see message for details)\n */\nclass EmptyResultError extends BaseError {\n  constructor(message: string, options?: ErrorOptions) {\n    super(message, options);\n    this.name = 'SequelizeEmptyResultError';\n  }\n}\n\nexport default EmptyResultError;\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AACA,wBAAsB;AAKtB,MAAM,yBAAyB,0BAAU;AAAA,EACvC,YAAY,SAAiB,SAAwB;AACnD,UAAM,SAAS,OAAO;AACtB,SAAK,OAAO;AAAA,EACd;AACF;AAEA,IAAO,6BAAQ;",
+  "names": []
+}
