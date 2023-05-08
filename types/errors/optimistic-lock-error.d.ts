@@ -1,4 +1,3 @@
-import type { ErrorOptions } from './base-error';
 import BaseError from './base-error';
 interface OptimisticLockErrorOptions {
     message?: string;
@@ -15,6 +14,6 @@ declare class OptimisticLockError extends BaseError {
     modelName: string | undefined;
     values: Record<string, unknown> | undefined;
     where: Record<string, unknown> | undefined;
-    constructor(options?: OptimisticLockErrorOptions, errorOptions?: ErrorOptions);
+    constructor(options: OptimisticLockErrorOptions);
 }
 export default OptimisticLockError;

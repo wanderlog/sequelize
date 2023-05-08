@@ -1,13 +1,14 @@
-export interface SequelizeErrorOptions {
+export interface ErrorOptions {
     stack?: string;
 }
 export interface CommonErrorProperties {
+    /** The database specific error which triggered this one */
+    readonly parent: Error;
+    /** The database specific error which triggered this one */
+    readonly original: Error;
     /** The SQL that triggered the error */
     readonly sql: string;
 }
-export declare type ErrorOptions = {
-    cause?: Error;
-};
 /**
  * The Base Error all Sequelize Errors inherit from.
  *
@@ -17,9 +18,6 @@ export declare type ErrorOptions = {
  * This means that errors can be accessed using `Sequelize.ValidationError`
  */
 declare abstract class BaseError extends Error {
-    cause: Error | undefined;
-    get parent(): this['cause'];
-    get original(): this['cause'];
-    constructor(message?: string, options?: ErrorOptions);
+    constructor(message?: string);
 }
 export default BaseError;

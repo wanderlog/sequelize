@@ -1,6 +1,5 @@
 import { ValidationOptions } from './instance-validator';
-import {
-  Model,
+import Model, {
   BulkCreateOptions,
   CountOptions,
   CreateOptions,
@@ -10,12 +9,13 @@ import {
   InstanceUpdateOptions,
   ModelAttributes,
   ModelOptions, RestoreOptions, UpdateOptions, UpsertOptions,
-  Attributes, CreationAttributes, ModelStatic
+  Attributes, CreationAttributes, ModelType
 } from './model';
 import { AbstractQuery } from './dialects/abstract/query';
 import { QueryOptions } from './dialects/abstract/query-interface';
 import { Config, Options, Sequelize, SyncOptions } from './sequelize';
 import { DeepWriteable } from './utils';
+import { Connection, GetConnectionOptions } from './dialects/abstract/connection-manager';
 
 export type HookReturn = Promise<void> | void;
 
@@ -68,15 +68,17 @@ export interface ModelHooks<M extends Model = Model, TAttributes = any> {
 
 export interface SequelizeHooks<
   M extends Model<TAttributes, TCreationAttributes> = Model,
-  TAttributes = any,
-  TCreationAttributes = TAttributes
+  TAttributes extends {} = any,
+  TCreationAttributes extends {} = TAttributes
 > extends ModelHooks<M, TAttributes> {
   beforeDefine(attributes: ModelAttributes<M, TCreationAttributes>, options: ModelOptions<M>): void;
-  afterDefine(model: ModelStatic): void;
+  afterDefine(model: ModelType): void;
   beforeInit(config: Config, options: Options): void;
   afterInit(sequelize: Sequelize): void;
   beforeConnect(config: DeepWriteable<Config>): HookReturn;
   afterConnect(connection: unknown, config: Config): HookReturn;
+  beforePoolAcquire(config: GetConnectionOptions): HookReturn;
+  afterPoolAcquire(connection: Connection, config: GetConnectionOptions): HookReturn;
   beforeDisconnect(connection: unknown): HookReturn;
   afterDisconnect(connection: unknown): HookReturn;
 }

@@ -1,7 +1,7 @@
 import { Connection } from './connection-manager';
-import { QueryTypes } from '../../query-types';
-import { Model, ModelStatic, IncludeOptions } from '../../model';
+import { Model, ModelType, IncludeOptions } from '../../model';
 import { Sequelize } from '../../sequelize';
+import QueryTypes = require('../../query-types');
 
 type BindOrReplacements = { [key: string]: unknown } | unknown[];
 type FieldMap = { [key: string]: string };
@@ -13,7 +13,7 @@ export interface AbstractQueryGroupJoinDataOptions {
 
 export interface AbstractQueryOptions {
   instance?: Model;
-  model?: ModelStatic;
+  model?: ModelType;
   type?: QueryTypes;
 
   fieldMap?: boolean;
@@ -79,10 +79,10 @@ export class AbstractQuery {
   /**
    * Model type definition.
    *
-   * @type {ModelStatic}
+   * @type {ModelType}
    * @memberof AbstractQuery
    */
-  public model: ModelStatic;
+  public model: ModelType;
 
   /**
    * Returns the current sequelize instance.

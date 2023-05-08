@@ -1,14 +1,10 @@
-import type { CommonErrorProperties, SequelizeErrorOptions } from '../base-error';
-import type { ValidationErrorItem } from '../validation-error';
-import ValidationError from '../validation-error';
+import { CommonErrorProperties, ErrorOptions } from '../base-error';
+import ValidationError, { ValidationErrorItem } from '../validation-error';
 interface UniqueConstraintErrorParent extends Error, Pick<CommonErrorProperties, 'sql'> {
 }
-export interface UniqueConstraintErrorOptions extends SequelizeErrorOptions {
-    cause?: UniqueConstraintErrorParent;
-    /**
-     * @deprecated use {@link UniqueConstraintErrorOptions.cause}
-     */
+export interface UniqueConstraintErrorOptions extends ErrorOptions {
     parent?: UniqueConstraintErrorParent;
+    original?: UniqueConstraintErrorParent;
     errors?: ValidationErrorItem[];
     fields?: Record<string, unknown>;
     message?: string;
@@ -17,10 +13,10 @@ export interface UniqueConstraintErrorOptions extends SequelizeErrorOptions {
  * Thrown when a unique constraint is violated in the database
  */
 declare class UniqueConstraintError extends ValidationError implements CommonErrorProperties {
-    /** The database specific error which triggered this one */
-    cause: UniqueConstraintErrorParent | undefined;
+    readonly parent: UniqueConstraintErrorParent;
+    readonly original: UniqueConstraintErrorParent;
     readonly fields: Record<string, unknown>;
     readonly sql: string;
-    constructor(options?: UniqueConstraintErrorOptions);
+    constructor(options: UniqueConstraintErrorOptions);
 }
 export default UniqueConstraintError;

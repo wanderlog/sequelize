@@ -8,17 +8,18 @@ import {
   WhereOptions,
   Filterable,
   Poolable,
+  ModelCtor,
   ModelStatic,
+  ModelType,
   CreationAttributes,
-  Attributes,
+  Attributes
 } from '../../model';
-import { QueryTypes } from '../../query-types';
+import QueryTypes = require('../../query-types');
 import { Sequelize, RetryOptions } from '../../sequelize';
 import { Transaction } from '../../transaction';
 import { SetRequired } from '../../utils/set-required';
 import { Fn, Literal } from '../../utils';
 import { Deferrable } from '../../deferrable';
-import { AbstractQueryGenerator } from './query-generator.js';
 
 type BindOrReplacements = { [key: string]: unknown } | unknown[];
 type FieldMap = { [key: string]: string };
@@ -153,34 +154,7 @@ export type TableName = string | TableNameWithSchema;
 export type IndexType = 'UNIQUE' | 'FULLTEXT' | 'SPATIAL';
 export type IndexMethod = 'BTREE' | 'HASH' | 'GIST' | 'SPGIST' | 'GIN' | 'BRIN' | string;
 
-export interface IndexField {
-  /**
-   * The name of the column
-   */
-  name: string;
-
-  /**
-   * Create a prefix index of length chars
-   */
-  length?: number;
-
-  /**
-   * The direction the column should be sorted in
-   */
-  order?: 'ASC' | 'DESC';
-
-  /**
-   * The collation (sort order) for the column
-   */
-  collate?: string;
-
-  /**
-   * Index operator type. Postgres only
-   */
-  operator?: string;
-}
-
-export interface IndexOptions {
+export interface IndexesOptions {
   /**
    * The name of the index. Defaults to model name + _ + fields concatenated
    */
@@ -202,21 +176,23 @@ export interface IndexOptions {
   unique?: boolean;
 
   /**
-   * PostgreSQL will build the index without taking any write locks. Postgres only.
+   * PostgreSQL will build the index without taking any write locks. Postgres only
    *
    * @default false
    */
   concurrently?: boolean;
 
   /**
-   * The fields to index.
+   * An array of the fields to index. Each field can either be a string containing the name of the field,
+   * a sequelize object (e.g `sequelize.fn`), or an object with the following attributes: `name`
+   * (field name), `length` (create a prefix index of length chars), `order` (the direction the column
+   * should be sorted in), `collate` (the collation (sort order) for the column), `operator` (likes IndexesOptions['operator'])
    */
-  fields?: Array<string | IndexField | Fn | Literal>;
+  fields?: (string | { name: string; length?: number; order?: 'ASC' | 'DESC'; collate?: string; operator?: string } | Fn | Literal)[];
 
   /**
-   * The method to create the index by (`USING` statement in SQL).
-   * BTREE and HASH are supported by mysql and postgres.
-   * Postgres additionally supports GIST, SPGIST, BRIN and GIN.
+   * The method to create the index by (`USING` statement in SQL). BTREE and HASH are supported by mysql and
+   * postgres, and postgres additionally supports GIST, SPGIST, BRIN and GIN.
    */
   using?: IndexMethod;
 
@@ -236,7 +212,7 @@ export interface IndexOptions {
   prefix?: string;
 }
 
-export interface QueryInterfaceIndexOptions extends IndexOptions, QueryInterfaceOptions {}
+export interface QueryInterfaceIndexOptions extends IndexesOptions, QueryInterfaceOptions {}
 
 export interface BaseConstraintOptions {
   name?: string;
@@ -316,7 +292,7 @@ export class QueryInterface {
    *
    * We don't have a definition for the QueryGenerator, because I doubt it is commonly in use separately.
    */
-  public queryGenerator: AbstractQueryGenerator;
+  public queryGenerator: unknown;
 
   /**
    * Returns the current sequelize instance.
@@ -400,6 +376,14 @@ export class QueryInterface {
    * Returns all tables
    */
   public showAllTables(options?: QueryOptions): Promise<string[]>;
+
+  /**
+   * Returns a promise that resolves to true if the table exists in the database, false otherwise.
+   *
+   * @param tableName The name of the table
+   * @param options Options passed to {@link Sequelize#query}
+   */
+  public tableExists(tableName: TableName, options?: QueryOptions): Promise<boolean>;
 
   /**
    * Describe a table
@@ -567,13 +551,13 @@ export class QueryInterface {
     tableName: TableName,
     identifier: WhereOptions<any>,
     options?: QueryOptions,
-    model?: ModelStatic
+    model?: ModelType
   ): Promise<object>;
 
   /**
    * Returns selected rows
    */
-  public select(model: ModelStatic | null, tableName: TableName, options?: QueryOptionsWithWhere): Promise<object[]>;
+  public select(model: ModelType | null, tableName: TableName, options?: QueryOptionsWithWhere): Promise<object[]>;
 
   /**
    * Increments a row value
@@ -593,7 +577,7 @@ export class QueryInterface {
     tableName: TableName,
     options: QueryOptionsWithWhere,
     attributeSelector: string | string[],
-    model?: ModelStatic
+    model?: ModelType
   ): Promise<string[]>;
 
   /**
@@ -657,6 +641,11 @@ export class QueryInterface {
   ): Promise<void>;
 
   /**
+   * Escape a table name
+   */
+  public quoteTable(identifier: TableName): string;
+
+  /**
    * Escape an identifier (e.g. a table or attribute name). If force is true, the identifier will be quoted
    * even if the `quoteIdentifiers` option is false.
    */
@@ -666,6 +655,11 @@ export class QueryInterface {
    * Split an identifier into .-separated tokens and quote each part.
    */
   public quoteIdentifiers(identifiers: string): string;
+
+  /**
+   * Escape a value (e.g. a string, number or date)
+   */
+  public escape(value?: string | number | Date): string;
 
   /**
    * Set option for autocommit of a transaction

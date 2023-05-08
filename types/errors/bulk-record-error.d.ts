@@ -1,5 +1,4 @@
 import type { Model } from '..';
-import type { ErrorOptions } from './base-error';
 import BaseError from './base-error';
 /**
  * Thrown when bulk operation fails, it represent per record level error.
@@ -11,6 +10,6 @@ import BaseError from './base-error';
 declare class BulkRecordError extends BaseError {
     errors: Error;
     record: Model;
-    constructor(error: Error, record: Model, options?: ErrorOptions);
+    constructor(error: Error, record: Model);
 }
 export default BulkRecordError;

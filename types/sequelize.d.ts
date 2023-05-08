@@ -1,6 +1,8 @@
+import type { Options as RetryAsPromisedOptions } from 'retry-as-promised';
 import { HookReturn, Hooks, SequelizeHooks } from './hooks';
 import { ValidationOptions } from './instance-validator';
 import {
+  AndOperator,
   BulkCreateOptions,
   CreateOptions,
   DestroyOptions,
@@ -12,21 +14,25 @@ import {
   ModelAttributeColumnOptions,
   ModelAttributes,
   ModelOptions,
+  OrOperator,
   UpdateOptions,
   WhereOperators,
+  ModelCtor,
   Hookable,
-  ModelStatic,
+  ModelType,
   CreationAttributes,
   Attributes,
-  ColumnReference,
-  WhereAttributeHashValue,
+  ColumnReference, WhereAttributeHashValue,
 } from './model';
 import { ModelManager } from './model-manager';
-import { QueryTypes, Transaction, TransactionOptions, TRANSACTION_TYPES, ISOLATION_LEVELS, PartlyRequired, Op, DataTypes } from '.';
-import { Cast, Col, DeepWriteable, Fn, Json, Literal, Where } from './utils';
-import type { AbstractDialect } from './dialects/abstract';
 import { QueryInterface, QueryOptions, QueryOptionsWithModel, QueryOptionsWithType, ColumnsDescription } from './dialects/abstract/query-interface';
-import { ConnectionManager } from './dialects/abstract/connection-manager';
+import QueryTypes = require('./query-types');
+import { Transaction, TransactionOptions } from './transaction';
+import { Op } from './index';
+import { Cast, Col, DeepWriteable, Fn, Json, Literal, Where } from './utils';
+import { Connection, ConnectionManager, GetConnectionOptions } from './dialects/abstract/connection-manager';
+
+export type RetryOptions = RetryAsPromisedOptions;
 
 /**
  * Additional options for table altering during sync
@@ -74,9 +80,7 @@ export interface SyncOptions extends Logging, Hookable {
 export interface DefaultSetOptions { }
 
 /**
- * Connection Pool options.
- *
- * Used in {@link Options.pool}
+ * Connection Pool options
  */
 export interface PoolOptions {
   /**
@@ -168,15 +172,10 @@ export interface Config {
   };
 }
 
-export type Dialect = 'mysql' | 'postgres' | 'sqlite' | 'mariadb' | 'mssql' | 'db2' | 'snowflake' | 'ibmi';
-
-export interface RetryOptions {
-  match?: (RegExp | string | Function)[];
-  max?: number;
-}
+export type Dialect = 'mysql' | 'postgres' | 'sqlite' | 'mariadb' | 'mssql' | 'db2' | 'snowflake' | 'oracle';
 
 /**
- * Options for the constructor of the {@link Sequelize} main class.
+ * Options for the constructor of Sequelize main class
  */
 export interface Options extends Logging {
   /**
@@ -238,7 +237,7 @@ export interface Options extends Logging {
   /**
    * The port of the relational database.
    */
-  port?: number | string;
+  port?: number;
 
   /**
    * A flag that defines if is used SSL.
@@ -327,14 +326,14 @@ export interface Options extends Logging {
    *
    * @default 'REPEATABLE_READ'
    */
-  isolationLevel?: ISOLATION_LEVELS;
+  isolationLevel?: string;
 
   /**
    * Set the default transaction type. See Sequelize.Transaction.TYPES for possible options. Sqlite only.
    *
    * @default 'DEFERRED'
    */
-  transactionType?: TRANSACTION_TYPES;
+  transactionType?: Transaction.TYPES;
 
   /**
    * Run built in type validators on insert and update, e.g. validate that arguments passed to integer
@@ -346,7 +345,7 @@ export interface Options extends Logging {
 
   /**
    * Sets available operator aliases.
-   * See (https://sequelize.org/docs/v7/core-concepts/model-querying-basics/#operators) for more information.
+   * See (https://sequelize.org/master/manual/querying.html#operators) for more information.
    * WARNING: Setting this to boolean value was deprecated and is no-op.
    *
    * @default all aliases
@@ -399,6 +398,13 @@ export interface Options extends Logging {
    * If defined the connection will use the provided schema instead of the default ("public").
    */
   schema?: string;
+
+  /**
+   * Sequelize had to introduce a breaking change to fix vulnerability CVE-2023-22578.
+   * This option allows you to revert to the old behavior (unsafe-legacy), or to opt in to the new behavior (escape).
+   * The default behavior throws an error to warn you about the change (throw).
+   */
+  attributeBehavior?: 'escape' | 'throw' | 'unsafe-legacy';
 }
 
 export interface QueryOptionsTransactionRequired { }
@@ -408,7 +414,7 @@ export interface QueryOptionsTransactionRequired { }
  * import sequelize:
  *
  * ```js
- * const { Sequelize } = require('@sequelize/core');
+ * const Sequelize = require('sequelize');
  * ```
  *
  * In addition to sequelize, the connection library for the dialect you want to use
@@ -485,8 +491,8 @@ export class Sequelize extends Hooks {
    *
    * @param conditionsOrPath A hash containing strings/numbers or other nested hash, a string using dot
    *   notation or a string using postgres json syntax.
-   * @param value An optional value to compare against.
-   *   Produces a string of the form "&lt;json path&gt; = '&lt;value&gt;'"`.
+   * @param value An optional value to compare against. Produces a string of the form "<json path> =
+   *   '<value>'".
    */
   public static json: typeof json;
   public json: typeof json;
@@ -511,9 +517,6 @@ export class Sequelize extends Hooks {
    */
   public static where: typeof where;
   public where: typeof where;
-
-  public static Op: typeof Op;
-  public static DataTypes: typeof DataTypes;
 
   /**
    * A hook that is run before validation
@@ -717,6 +720,26 @@ export class Sequelize extends Hooks {
   public static afterDisconnect(name: string, fn: (connection: unknown) => void): void;
   public static afterDisconnect(fn: (connection: unknown) => void): void;
 
+
+  /**
+   * A hook that is run before attempting to acquire a connection from the pool
+   *
+   * @param name
+   * @param fn   A callback function that is called with options
+   */
+  public static beforePoolAcquire(name: string, fn: (options: GetConnectionOptions) => void): void;
+  public static beforePoolAcquire(fn: (options: GetConnectionOptions) => void): void;
+
+  /**
+   * A hook that is run after successfully acquiring a connection from the pool
+   *
+   * @param name
+   * @param fn   A callback function that is called with options
+   */
+  public static afterPoolAcquire(name: string, fn: (connection: Connection, options: GetConnectionOptions) => void): void;
+  public static afterPoolAcquire(fn: (connection: Connection, options: GetConnectionOptions) => void): void;
+
+
   /**
    * A hook that is run before a find (select) query, after any { include: {all: ...} } options are expanded
    *
@@ -769,8 +792,8 @@ export class Sequelize extends Hooks {
    * @param name
    * @param fn   A callback function that is called with factory
    */
-  public static afterDefine(name: string, fn: (model: ModelStatic) => void): void;
-  public static afterDefine(fn: (model: ModelStatic) => void): void;
+  public static afterDefine(name: string, fn: (model: ModelType) => void): void;
+  public static afterDefine(fn: (model: ModelType) => void): void;
 
   /**
    * A hook that is run before Sequelize() call
@@ -829,7 +852,7 @@ export class Sequelize extends Hooks {
    *
    * @param namespace
    */
-  public static useCLS(namespace: ContinuationLocalStorageNamespace): typeof Sequelize;
+  public static useCLS(namespace: object): typeof Sequelize;
 
   /**
    * A reference to Sequelize constructor from sequelize. Useful for accessing DataTypes, Errors etc.
@@ -841,26 +864,15 @@ export class Sequelize extends Hooks {
    */
   public readonly config: Config;
 
-  public readonly options: PartlyRequired<Options, 'transactionType' | 'isolationLevel'>;
-
-  public readonly dialect: AbstractDialect;
-
   public readonly modelManager: ModelManager;
 
   public readonly connectionManager: ConnectionManager;
 
   /**
-   * For internal use only.
-   *
-   * @type {ContinuationLocalStorageNamespace | undefined}
-   */
-  public static readonly _cls: ContinuationLocalStorageNamespace | undefined;
-
-  /**
    * Dictionary of all models linked with this instance.
    */
-  public models: {
-    [key: string]: ModelStatic<Model>;
+  public readonly models: {
+    [key: string]: ModelCtor<Model>;
   };
 
   /**
@@ -1084,8 +1096,8 @@ export class Sequelize extends Hooks {
    * @param name
    * @param fn   A callback function that is called with factory
    */
-  public afterDefine(name: string, fn: (model: ModelStatic) => void): void;
-  public afterDefine(fn: (model: ModelStatic) => void): void;
+  public afterDefine(name: string, fn: (model: ModelType) => void): void;
+  public afterDefine(fn: (model: ModelType) => void): void;
 
   /**
    * A hook that is run before Sequelize() call
@@ -1164,7 +1176,7 @@ export class Sequelize extends Hooks {
    * class MyModel extends Model {}
    * MyModel.init({
    *   columnA: {
-   *     type: DataTypes.BOOLEAN,
+   *     type: Sequelize.BOOLEAN,
    *     validate: {
    *       is: ["[a-z]",'i'],    // will only allow letters
    *       max: 23,          // only allow values <= 23
@@ -1176,7 +1188,7 @@ export class Sequelize extends Hooks {
    *     field: 'column_a'
    *     // Other attributes here
    *   },
-   *   columnB: DataTypes.STRING,
+   *   columnB: Sequelize.STRING,
    *   columnC: 'MY VERY OWN COLUMN TYPE'
    * }, { sequelize })
    *
@@ -1189,16 +1201,16 @@ export class Sequelize extends Hooks {
    * getters.
    *
    * For a list of possible data types, see
-   * https://sequelize.org/docs/v7/other-topics/other-data-types
+   * https://sequelize.org/master/en/latest/docs/models-definition/#data-types
    *
    * For more about getters and setters, see
-   * https://sequelize.org/docs/v7/core-concepts/getters-setters-virtuals/
+   * https://sequelize.org/master/en/latest/docs/models-definition/#getters-setters
    *
    * For more about instance and class methods, see
-   * https://sequelize.org/docs/v7/core-concepts/model-basics/#taking-advantage-of-models-being-classes
+   * https://sequelize.org/master/en/latest/docs/models-definition/#expansion-of-models
    *
    * For more about validation, see
-   * https://sequelize.org/docs/v7/core-concepts/validations-and-constraints/
+   * https://sequelize.org/master/en/latest/docs/models-definition/#validations
    *
    * @param modelName  The name of the model. The model will be stored in `sequelize.models` under this name
    * @param attributes An object, where each attribute is a column of the table. Each column can be either a
@@ -1208,16 +1220,16 @@ export class Sequelize extends Hooks {
    */
   public define<M extends Model, TAttributes = Attributes<M>>(
     modelName: string,
-    attributes?: ModelAttributes<M, TAttributes>,
+    attributes: ModelAttributes<M, TAttributes>,
     options?: ModelOptions<M>
-  ): ModelStatic<M>;
+  ): ModelCtor<M>;
 
   /**
    * Fetch a Model which is already defined
    *
    * @param modelName The name of a model defined with Sequelize.define
    */
-  public model(modelName: string): ModelStatic<Model>;
+  public model(modelName: string): ModelCtor<Model>;
 
   /**
    * Checks whether a model with the given name is defined
@@ -1298,7 +1310,7 @@ export class Sequelize extends Hooks {
    * @param schema Name of the schema
    * @param options Options supplied
    */
-  public createSchema(schema: string, options?: Logging): Promise<unknown>;
+  public createSchema(schema: string, options: Logging): Promise<unknown>;
 
   /**
    * Show all defined schemas
@@ -1309,7 +1321,7 @@ export class Sequelize extends Hooks {
    *
    * @param options Options supplied
    */
-  public showAllSchemas(options?: Logging): Promise<object[]>;
+  public showAllSchemas(options: Logging): Promise<object[]>;
 
   /**
    * Drop a single schema
@@ -1321,7 +1333,7 @@ export class Sequelize extends Hooks {
    * @param schema Name of the schema
    * @param options Options supplied
    */
-  public dropSchema(schema: string, options?: Logging): Promise<unknown[]>;
+  public dropSchema(schema: string, options: Logging): Promise<unknown[]>;
 
   /**
    * Drop all schemas
@@ -1332,7 +1344,7 @@ export class Sequelize extends Hooks {
    *
    * @param options Options supplied
    */
-  public dropAllSchemas(options?: Logging): Promise<unknown[]>;
+  public dropAllSchemas(options: Logging): Promise<unknown[]>;
 
   /**
    * Sync all defined models to the DB.
@@ -1403,7 +1415,7 @@ export class Sequelize extends Hooks {
    * ```js
    * const cls = require('cls-hooked');
    * const namespace = cls.createNamespace('....');
-   * const Sequelize = require('@sequelize/core');
+   * const Sequelize = require('sequelize');
    * Sequelize.useCLS(namespace);
    * ```
    * Note, that CLS is enabled for all sequelize instances, and all instances will share the same namespace
@@ -1428,11 +1440,6 @@ export class Sequelize extends Hooks {
    * Returns the database version
    */
   public databaseVersion(): Promise<string>;
-
-  /**
-   * Returns the installed version of Sequelize
-   */
-  static get version(): string;
 }
 
 // Utilities
@@ -1453,10 +1460,7 @@ export class Sequelize extends Hooks {
  * @param fn The function you want to call
  * @param args All further arguments will be passed as arguments to the function
  */
-export function fn(
-  fn: string,
-  ...args: Fn['args']
-): Fn;
+export function fn(fn: string, ...args: unknown[]): Fn;
 
 /**
  * Creates a object representing a column in the DB. This is often useful in conjunction with
@@ -1500,12 +1504,24 @@ export function or<T extends Array<any>>(...args: T): { [Op.or]: T };
  *
  * @param conditionsOrPath A hash containing strings/numbers or other nested hash, a string using dot
  *   notation or a string using postgres json syntax.
- * @param value An optional value to compare against.
- *   Produces a string of the form "&lt;json path&gt; = '&lt;value&gt;'".
+ * @param value An optional value to compare against. Produces a string of the form "<json path> =
+ *   '<value>'".
  */
 export function json(conditionsOrPath: string | object, value?: string | number | boolean): Json;
 
 export type WhereLeftOperand = Fn | ColumnReference | Literal | Cast | ModelAttributeColumnOptions;
+
+// TODO [>6]: Remove
+/**
+ * @deprecated use {@link WhereLeftOperand} instead.
+ */
+export type AttributeType = WhereLeftOperand;
+
+// TODO [>6]: Remove
+/**
+ * @deprecated this is not used anymore, typing definitions for {@link where} have changed to more accurately reflect reality.
+ */
+export type LogicType = Fn | Col | Literal | OrOperator<any> | AndOperator<any> | WhereOperators | string | symbol | null;
 
 /**
  * A way of specifying "attr = condition".
@@ -1546,7 +1562,4 @@ export function where<Op extends keyof WhereOperators>(leftOperand: WhereLeftOpe
 export function where<Op extends keyof WhereOperators>(leftOperand: any, operator: string, rightOperand: any): Where;
 export function where(leftOperand: WhereLeftOperand, rightOperand: WhereAttributeHashValue<any>): Where;
 
-type ContinuationLocalStorageNamespace = {
-  get(key: string): unknown;
-  set(key: string, value: unknown): void;
-};
+export default Sequelize;

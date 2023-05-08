@@ -1,5 +1,4 @@
-import type { DatabaseErrorSubclassOptions } from '../database-error';
-import DatabaseError from '../database-error';
+import DatabaseError, { DatabaseErrorSubclassOptions } from '../database-error';
 export declare enum RelationshipType {
     parent = "parent",
     child = "child"
@@ -24,6 +23,6 @@ declare class ForeignKeyConstraintError extends DatabaseError {
     value: unknown;
     index: string | undefined;
     reltype: RelationshipType | undefined;
-    constructor(options?: ForeignKeyConstraintErrorOptions & DatabaseErrorSubclassOptions);
+    constructor(options: ForeignKeyConstraintErrorOptions & DatabaseErrorSubclassOptions);
 }
 export default ForeignKeyConstraintError;

@@ -1,5 +1,4 @@
-import type { DatabaseErrorSubclassOptions } from '../database-error';
-import DatabaseError from '../database-error';
+import DatabaseError, { DatabaseErrorSubclassOptions } from '../database-error';
 interface ExclusionConstraintErrorOptions {
     constraint?: string;
     fields?: Record<string, string | number>;
@@ -12,6 +11,6 @@ declare class ExclusionConstraintError extends DatabaseError implements Exclusio
     constraint: string | undefined;
     fields: Record<string, string | number> | undefined;
     table: string | undefined;
-    constructor(options?: DatabaseErrorSubclassOptions & ExclusionConstraintErrorOptions);
+    constructor(options: DatabaseErrorSubclassOptions & ExclusionConstraintErrorOptions);
 }
 export default ExclusionConstraintError;

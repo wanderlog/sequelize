@@ -1,5 +1,5 @@
 import type { Model } from '..';
-import type { ErrorOptions, SequelizeErrorOptions } from './base-error';
+import type { ErrorOptions } from './base-error';
 import BaseError from './base-error';
 /**
  * An enum that is used internally by the `ValidationErrorItem` class
@@ -113,13 +113,13 @@ export declare class ValidationErrorItem {
 declare class ValidationError extends BaseError {
     /** Array of ValidationErrorItem objects describing the validation errors */
     readonly errors: ValidationErrorItem[];
-    constructor(message: string, errors: ValidationErrorItem[], options?: SequelizeErrorOptions & ErrorOptions);
+    constructor(message: string, errors: ValidationErrorItem[], options?: ErrorOptions);
     /**
      * Gets all validation error items for the path / field specified.
      *
-     * @param path The path to be checked for error items
+     * @param {string} path The path to be checked for error items
      *
-     * @returns Validation error items for the specified path
+     * @returns {Array<ValidationErrorItem>} Validation error items for the specified path
      */
     get(path: string): ValidationErrorItem[];
 }

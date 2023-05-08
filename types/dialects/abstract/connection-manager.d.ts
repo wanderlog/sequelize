@@ -7,16 +7,9 @@ export interface GetConnectionOptions {
    * Force master or write replica to get connection from
    */
   useMaster?: boolean;
-
-  /**
-   * ID of the connection.
-   */
-  uuid?: string | 'default';
 }
 
-export type Connection = {
-  uuid: string | undefined
-};
+export type Connection = object;
 
 export interface ConnectionManager {
   refreshTypeParser(dataTypes: object): void;
@@ -33,9 +26,14 @@ export interface ConnectionManager {
    * Get connection from pool. It sets database version if it's not already set.
    * Call pool.acquire to get a connection.
    */
-  getConnection(opts?: GetConnectionOptions): Promise<Connection>;
+  getConnection(opts: GetConnectionOptions): Promise<Connection>;
   /**
-   * Release a pooled connection so it can be utilized by other connection requests
+   * Release a pooled connection, so it can be utilized by other connection requests
    */
-  releaseConnection(conn: Connection): Promise<void>;
+  releaseConnection(conn: Connection): void;
+
+  /**
+   * Destroys a pooled connection and removes it from the pool.
+   */
+  destroyConnection(conn: Connection): Promise<void>;
 }

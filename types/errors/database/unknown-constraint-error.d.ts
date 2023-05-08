@@ -1,5 +1,4 @@
-import type { DatabaseErrorSubclassOptions } from '../database-error';
-import DatabaseError from '../database-error';
+import DatabaseError, { DatabaseErrorSubclassOptions } from '../database-error';
 interface UnknownConstraintErrorOptions {
     constraint?: string;
     fields?: Record<string, string | number>;
@@ -12,6 +11,6 @@ declare class UnknownConstraintError extends DatabaseError implements UnknownCon
     constraint: string | undefined;
     fields: Record<string, string | number> | undefined;
     table: string | undefined;
-    constructor(options?: UnknownConstraintErrorOptions & DatabaseErrorSubclassOptions);
+    constructor(options: UnknownConstraintErrorOptions & DatabaseErrorSubclassOptions);
 }
 export default UnknownConstraintError;

@@ -1,9 +1,9 @@
 import { DataType } from '../data-types';
-import { CreateOptions, CreationAttributes, FindOptions, Model, ModelStatic, SaveOptions } from '../model';
+import { CreateOptions, CreationAttributes, FindOptions, Model, ModelCtor, SaveOptions } from '../model';
 import { Association, AssociationOptions, SingleAssociationAccessors } from './base';
 
 /**
- * Options provided when associating models with {@link Model.hasOne} relationship
+ * Options provided when associating models with hasOne relationship
  */
 export interface HasOneOptions extends AssociationOptions {
 
@@ -21,7 +21,7 @@ export interface HasOneOptions extends AssociationOptions {
 
 export class HasOne<S extends Model = Model, T extends Model = Model> extends Association<S, T> {
   public accessors: SingleAssociationAccessors;
-  constructor(source: ModelStatic<S>, target: ModelStatic<T>, options: HasOneOptions);
+  constructor(source: ModelCtor<S>, target: ModelCtor<T>, options: HasOneOptions);
 }
 
 /**
@@ -36,7 +36,7 @@ export interface HasOneGetAssociationMixinOptions extends FindOptions<any> {
 }
 
 /**
- * The getAssociation mixin applied to models with {@link Model.hasOne}.
+ * The getAssociation mixin applied to models with hasOne.
  * An example of usage is as follows:
  *
  * ```js
@@ -50,6 +50,7 @@ export interface HasOneGetAssociationMixinOptions extends FindOptions<any> {
  * }
  * ```
  *
+ * @see https://sequelize.org/master/class/lib/associations/has-one.js~HasOne.html
  * @see Instance
  */
 export type HasOneGetAssociationMixin<TModel> = (options?: HasOneGetAssociationMixinOptions) => Promise<TModel>;
@@ -66,7 +67,7 @@ export interface HasOneSetAssociationMixinOptions extends HasOneGetAssociationMi
 }
 
 /**
- * The setAssociation mixin applied to models with {@link Model.hasOne}.
+ * The setAssociation mixin applied to models with hasOne.
  * An example of usage is as follows:
  *
  * ```js
@@ -80,6 +81,7 @@ export interface HasOneSetAssociationMixinOptions extends HasOneGetAssociationMi
  * }
  * ```
  *
+ * @see https://sequelize.org/master/class/lib/associations/has-one.js~HasOne.html
  * @see Instance
  */
 export type HasOneSetAssociationMixin<TModel, TModelPrimaryKey> = (
@@ -94,7 +96,7 @@ export type HasOneSetAssociationMixin<TModel, TModelPrimaryKey> = (
 export interface HasOneCreateAssociationMixinOptions extends HasOneSetAssociationMixinOptions, CreateOptions<any> {}
 
 /**
- * The createAssociation mixin applied to models with {@link Model.hasOne}.
+ * The createAssociation mixin applied to models with hasOne.
  * An example of usage is as follows:
  *
  * ```js
@@ -108,6 +110,7 @@ export interface HasOneCreateAssociationMixinOptions extends HasOneSetAssociatio
  * }
  * ```
  *
+ * @see https://sequelize.org/master/class/lib/associations/has-one.js~HasOne.html
  * @see Instance
  */
 export type HasOneCreateAssociationMixin<TModel extends Model> = (

@@ -1,12 +1,10 @@
 /**
- * An enum of index hints to be used in mysql for querying with index hints
- *
- * @property USE
- * @property FORCE
- * @property IGNORE
+ * Available index hints to be used for querying data in mysql for index hints.
  */
-export declare enum IndexHints {
-    USE = "USE",
-    FORCE = "FORCE",
-    IGNORE = "IGNORE"
+declare enum IndexHints {
+  USE = 'USE',
+  FORCE = 'FORCE',
+  IGNORE = 'IGNORE'
 }
+
+export = IndexHints;

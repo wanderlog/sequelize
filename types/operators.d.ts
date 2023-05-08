@@ -45,7 +45,7 @@ interface OpTypes {
      * ```
      * In SQL
      * ```sql
-     * ANY (ARRAY[2, 3]::INTEGER[])
+     * ANY ARRAY[2, 3]::INTEGER
      * ```
      *
      * Operator LIKE ANY ARRAY (also works for iLike and notLike)
@@ -55,7 +55,7 @@ interface OpTypes {
      * ```
      * In SQL
      * ```sql
-     * LIKE ANY (ARRAY['cat', 'hat'])
+     * LIKE ANY ARRAY['cat', 'hat']
      * ```
      */
     readonly any: unique symbol;
@@ -312,18 +312,6 @@ interface OpTypes {
      */
     readonly notBetween: unique symbol;
     /**
-     * Operator NOT LIKE
-     *
-     * ```js
-     * [Op.notEndsWith]: 'hat'
-     * ```
-     * In SQL
-     * ```sql
-     * NOT LIKE '%hat'
-     * ```
-     */
-    readonly notEndsWith: unique symbol;
-    /**
      * Operator NOT ILIKE (case insensitive) (PG only)
      *
      * ```js
@@ -383,30 +371,6 @@ interface OpTypes {
      * ```
      */
     readonly notRegexp: unique symbol;
-    /**
-     * Operator NOT LIKE
-     *
-     * ```js
-     * [Op.notStartsWith]: 'hat'
-     * ```
-     * In SQL
-     * ```sql
-     * NOT LIKE 'hat%'
-     * ```
-     */
-    readonly notStartsWith: unique symbol;
-    /**
-     * Operator LIKE
-     *
-     * ```js
-     * [Op.notSubstring]: 'hat'
-     * ```
-     * In SQL
-     * ```sql
-     * NOT LIKE '%hat%'
-     * ```
-     */
-    readonly notSubstring: unique symbol;
     /**
      * Operator OR
      *
@@ -513,4 +477,4 @@ interface OpTypes {
     readonly values: unique symbol;
 }
 export declare const Op: OpTypes;
-export {};
+export default Op;

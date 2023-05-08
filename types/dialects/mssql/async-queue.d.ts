@@ -5,7 +5,7 @@ import BaseError from '../../errors/base-error';
 export declare class AsyncQueueError extends BaseError {
     constructor(message: string);
 }
-export declare class AsyncQueue {
+declare class AsyncQueue {
     previous: Promise<unknown>;
     closed: boolean;
     rejectCurrent: (reason?: any) => void;
@@ -13,3 +13,4 @@ export declare class AsyncQueue {
     close(): void;
     enqueue(asyncFunction: (...args: any[]) => Promise<unknown>): Promise<unknown>;
 }
+export default AsyncQueue;

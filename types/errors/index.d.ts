@@ -10,7 +10,7 @@ export { default as InstanceError } from './instance-error';
 export { default as OptimisticLockError } from './optimistic-lock-error';
 export { default as QueryError } from './query-error';
 export { default as SequelizeScopeError } from './sequelize-scope-error';
-export { default as ValidationError, ValidationErrorItem, ValidationErrorItemOrigin, ValidationErrorItemType, } from './validation-error';
+export { default as ValidationError, ValidationErrorItem, ValidationErrorItemOrigin, ValidationErrorItemType } from './validation-error';
 export { default as AccessDeniedError } from './connection/access-denied-error';
 export { default as ConnectionAcquireTimeoutError } from './connection/connection-acquire-timeout-error';
 export { default as ConnectionRefusedError } from './connection/connection-refused-error';

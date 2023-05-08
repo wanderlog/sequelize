@@ -1,3 +1,10 @@
+/**
+ * @file Sequelize module for debug and deprecation messages.
+ * It require a `context` for which messages will be printed.
+ *
+ * @module logging
+ * @access package
+ */
 import nodeDebug from 'debug';
 /**
  * The configuration for sequelize's logging interface.
