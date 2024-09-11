@@ -92,7 +92,7 @@
     "esdoc-inject-style-plugin": "^1.0.0",
     "esdoc-standard-plugin": "^1.0.0",
     "eslint": "^8.5.0",
-    "eslint-plugin-jsdoc": "^37.4.0",
+    "eslint-plugin-jsdoc": "^50.2.2",
     "eslint-plugin-mocha": "^9.0.0",
     "expect-type": "^0.12.0",
     "fast-glob": "^3.2.7",
@@ -302,8 +302,9 @@
     "sscce-mssql": "cross-env DIALECT=mssql node sscce.js",
     "sscce-db2": "cross-env DIALECT=db2 node sscce.js",
     "sscce-oracle": "cross-env LD_LIBRARY_PATH=\"$PWD/.oracle/instantclient/\" DIALECT=oracle UV_THREADPOOL_SIZE=128 node sscce.js",
+    "prebuild-warning": "echo 'If running this on M1 Macs, this may not work! You may need to use an x86_64 version of Homebrew and NodeJS. See https://www.notion.so/wanderlog/Installing-Intel-Homebrew-and-NodeJS-18dd57c6162d4e9a8a77823e05ecec9f'",
     "prepare": "npm run build && husky install",
-    "build": "node ./build.js",
+    "build": "yarn prebuild-warning && node ./build.js",
     "---------------------------------------------------------------------------------------------------": ""
   },
   "support": true
