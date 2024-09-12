@@ -39,7 +39,8 @@ class DatabaseError
     this.parameters = parent.parameters ?? {};
 
     if (options.stack) {
-      this.stack = options.stack;
+      const trimmedStack = options.stack.replace(/^\s*[\r\n]/gm, '');
+      this.stack = `${parent.message}\n${trimmedStack}`;
     }
   }
 }
