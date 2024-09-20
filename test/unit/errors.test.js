@@ -3,6 +3,8 @@
 const errors = require('sequelize/lib/errors');
 const expect = require('chai').expect;
 
+const { ValidationError } = errors;
+
 describe('errors', () => {
   it('should maintain stack trace with message', () => {
     const errorsWithMessage = [
@@ -28,15 +30,35 @@ describe('errors', () => {
     });
   });
 
-  it('should maintain stack trace without message', () => {
-    const errorsWithoutMessage = [
+  it('should include error message in ValidationError with overridden stacktrace', () => {
+    function throwError() {
+      const errForStack = new Error();
+      throw new ValidationError('this is a message', [], { stack: errForStack.stack });
+    }
+    let err;
+    try {
+      throwError();
+    } catch (error) {
+      err = error;
+    }
+    expect(err).to.exist;
+    const stackParts = err.stack.split('\n');
+    expect(stackParts[0]).to.equal('SequelizeValidationError: this is a message');
+    expect(stackParts[1]).to.match(/^ {4}at throwError \(.*errors.test.js:\d+:\d+\)$/);
+  });
+
+  it('should include the parent error message in the stacktrace', () => {
+    const databaseErrors = [
       'ConnectionError', 'ConnectionRefusedError', 'ConnectionTimedOutError',
-      'AccessDeniedError', 'HostNotFoundError', 'HostNotReachableError', 'InvalidConnectionError'
+      'AccessDeniedError', 'HostNotFoundError', 'HostNotReachableError',
+      'InvalidConnectionError', 'DatabaseError'
     ];
 
-    errorsWithoutMessage.forEach(errorName => {
+    const parentError = new Error('this is a message');
+
+    databaseErrors.forEach(errorName => {
       function throwError() {
-        throw new errors[errorName](null);
+        throw new errors[errorName](parentError);
       }
       let err;
       try {
@@ -47,8 +69,8 @@ describe('errors', () => {
       expect(err).to.exist;
       const stackParts = err.stack.split('\n');
 
-      const fullErrorName = `Sequelize${errorName}: `;
-      expect(stackParts[0]).to.equal(fullErrorName);
+      const fullErrorName = `Sequelize${errorName}`;
+      expect(stackParts[0]).to.equal(`${fullErrorName}: this is a message`);
       expect(stackParts[1]).to.match(/^ {4}at throwError \(.*errors.test.js:\d+:\d+\)$/);
     });
   });

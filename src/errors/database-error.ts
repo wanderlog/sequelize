@@ -1,3 +1,4 @@
+import { mergeStack } from '../utils/merge-stack';
 import BaseError, { CommonErrorProperties, ErrorOptions } from './base-error';
 
 export interface DatabaseErrorParent
@@ -39,7 +40,11 @@ class DatabaseError
     this.parameters = parent.parameters ?? {};
 
     if (options.stack) {
-      this.stack = options.stack;
+      this.stack = mergeStack({
+        name: null,
+        message: parent.message,
+        stack: options.stack
+      });
     }
   }
 }

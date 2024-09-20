@@ -1,3 +1,4 @@
+import { mergeStack } from '../utils/merge-stack';
 import type { Model } from '..';
 import type { ErrorOptions } from './base-error';
 import BaseError from './base-error';
@@ -232,7 +233,11 @@ class ValidationError extends BaseError {
 
     // Allow overriding the stack if the original stacktrace is uninformative
     if (options.stack) {
-      this.stack = options.stack;
+      this.stack = mergeStack({
+        name: this.name,
+        message: this.message,
+        stack: options.stack
+      });
     }
   }
 
