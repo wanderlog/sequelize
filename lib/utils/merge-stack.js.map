@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/utils/merge-stack.ts"],
+  "sourcesContent": ["// eslint-disable-next-line jsdoc/require-param\n/**\n * Uses the given `stack` derived from an `error.stack`, but overrides the\n * first line with the given message.\n */\nexport function mergeStack({\n  name,\n  message,\n  stack\n}: {\n  /** Can be omitted if the name is already included */\n  name: string | null;\n  message: string;\n  stack: string;\n}) {\n  const trimmedStack = stack.replace(/^(Error)?\\s*[\\r\\n]/gm, '');\n  return `${name}: ${message}\\n${trimmedStack}`;\n}\n"],
+  "mappings": ";;;;;;;AAAA;AAAA;AAAA;AAKO,oBAAoB;AAAA,EACzB;AAAA,EACA;AAAA,EACA;AAAA,GAMC;AACD,QAAM,eAAe,MAAM,QAAQ,wBAAwB;AAC3D,SAAO,GAAG,SAAS;AAAA,EAAY;AAAA;",
+  "names": []
+}
