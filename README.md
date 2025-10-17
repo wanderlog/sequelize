@@ -1,4 +1,43 @@
-# Wanderlog notes
+# Wanderlog Fork
+
+This is a Wanderlog fork of Sequelize with some features and bugfixes.
+
+## Building the Wanderlog Version
+
+To build and release the wanderlog version:
+
+1. **Switch to the wanderlog-built branch:**
+   ```bash
+   git checkout wanderlog-built
+   git reset --hard wanderlog
+   ```
+
+2. **Comment out lib/ and types/ in .gitignore:**
+   ```bash
+   sed -i.bak 's|^/lib|# /lib|' .gitignore
+   sed -i.bak 's|^/types|# /types|' .gitignore
+   ```
+
+3. **Build the project:**
+   ```bash
+   yarn install
+   yarn build
+   ```
+
+4. **Commit and push the built version:**
+   ```bash
+   git add lib/ types/
+   git commit -m "build(v6.37.3-wanderlog.X): <same message as the most recent non-build commit>"
+   git push origin wanderlog-built
+   ```
+
+5. **Create GitHub release:**
+   - Visit https://github.com/wanderlog/sequelize/releases/new
+   - Create a new tag (e.g., `v6.37.3-wanderlog.X`)
+   - Leave everything else blank
+   - Click "Create release"
+
+## M1 Mac Compatibility
 
 If building this on M1 Macs, this may not work! You may need to use an x86_64 version of Homebrew and NodeJS. See https://www.notion.so/wanderlog/Installing-Intel-Homebrew-and-NodeJS-18dd57c6162d4e9a8a77823e05ecec9f
 
