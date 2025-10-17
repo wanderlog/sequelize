@@ -127,6 +127,11 @@ class Transaction {
     this.connection = connection;
     this.connection.uuid = this.id;
 
+    // Track transaction ID if connection tracking is enabled
+    if (this.sequelize.connectionManager.trackConnectionUsage) {
+      this.connection._transactionId = this.id;
+    }
+
     try {
       await this.begin();
       result = await this.setDeferrable();

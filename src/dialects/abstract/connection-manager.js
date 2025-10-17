@@ -25,6 +25,7 @@ class ConnectionManager {
     this.dialect = dialect;
     this.versionPromise = null;
     this.dialectName = this.sequelize.options.dialect;
+    this.trackConnectionUsage = config.pool.trackConnectionUsage || false;
 
     if (config.pool === false) {
       throw new Error('Support for pool:false was removed in v4.0');
@@ -291,8 +292,19 @@ class ConnectionManager {
       await this.sequelize.runHooks('afterPoolAcquire', result, options);
 
     } catch (error) {
-      if (error instanceof TimeoutError) throw new errors.ConnectionAcquireTimeoutError(error);
+      if (error instanceof TimeoutError) {
+        const diagnostics = this.trackConnectionUsage ? this._getPoolDiagnostics() : null;
+        throw new errors.ConnectionAcquireTimeoutError(error, diagnostics);
+      }
       throw error;
+    }
+
+    // Track connection metadata if enabled
+    if (this.trackConnectionUsage) {
+      result._acquireStack = new Error().stack;
+      result._acquireTime = Date.now();
+      result._query = undefined;
+      result._queryTime = undefined;
     }
 
     debug('connection acquired');
@@ -360,6 +372,93 @@ class ConnectionManager {
     }
 
     return this.dialect.connectionManager.validate(connection);
+  }
+
+  /**
+   * Gather diagnostics about all currently in-use connections for timeout error reporting
+   * 
+   * @private
+   * @returns {string|null} Formatted diagnostics string or null if tracking disabled
+   */
+  _getPoolDiagnostics() {
+    if (!this.trackConnectionUsage) {
+      return null;
+    }
+
+    const now = Date.now();
+    const connections = [];
+
+    // Helper to process a pool's in-use objects
+    const processPool = (pool, poolName) => {
+      if (!pool || !pool._inUseObjects) {
+        return;
+      }
+
+      pool._inUseObjects.forEach((wrappedConnection, index) => {
+        const connection = wrappedConnection.resource;
+        if (!connection) return;
+
+        const heldTime = connection._acquireTime ? (now - connection._acquireTime) / 1000 : 0;
+        const queryTime = connection._queryTime ? (now - connection._queryTime) / 1000 : null;
+        
+        let info = `${index + 1}. Held for ${heldTime.toFixed(1)}s`;
+        if (queryTime !== null) {
+          info += `, Query running for ${queryTime.toFixed(1)}s`;
+        }
+        if (connection._transactionId) {
+          info += `, Transaction: ${connection._transactionId}`;
+        }
+        if (poolName) {
+          info += ` (${poolName})`;
+        }
+
+        connections.push(info);
+
+        if (connection._query) {
+          // Truncate long queries for readability
+          const query = connection._query.length > 100 
+            ? `${connection._query.substring(0, 100)}...` 
+            : connection._query;
+          connections.push(`   Query: ${query}`);
+        }
+
+        if (connection._acquireStack) {
+          // Extract just the first few lines of the stack trace
+          const stackLines = connection._acquireStack.split('\n').slice(1, 4);
+          connections.push('   Acquired at:');
+          stackLines.forEach(line => {
+            connections.push(`     ${line.trim()}`);
+          });
+        }
+
+        connections.push(''); // Empty line between connections
+      });
+    };
+
+    // Check if we have replication pools or single pool
+    if (this.pool.read && this.pool.write) {
+      // Replication mode
+      processPool(this.pool.read, 'read');
+      processPool(this.pool.write, 'write');
+    } else {
+      // Single pool mode
+      processPool(this.pool, null);
+    }
+
+    if (connections.length === 0) {
+      return 'No active connections found.';
+    }
+
+    // Remove the last empty line
+    if (connections[connections.length - 1] === '') {
+      connections.pop();
+    }
+
+    const totalConnections = this.pool.read && this.pool.write 
+      ? (this.pool.read._inUseObjects?.length || 0) + (this.pool.write._inUseObjects?.length || 0)
+      : this.pool._inUseObjects?.length || 0;
+
+    return `Active connections (${totalConnections}/${this.pool.read && this.pool.write ? 'N/A' : this.pool.maxSize}):\n${connections.join('\n')}`;
   }
 }
 

@@ -118,6 +118,12 @@ export interface PoolOptions {
    * object, and that its state is not disconnected
    */
   validate?(client?: unknown): boolean;
+
+  /**
+   * Enable tracking of connection usage for timeout diagnostics. When enabled, connection metadata
+   * (stack traces, query info, timing) will be captured to help diagnose pool timeouts.
+   */
+  trackConnectionUsage?: boolean;
 }
 
 export interface ConnectionOptions {

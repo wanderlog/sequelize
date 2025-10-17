@@ -642,6 +642,13 @@ class Sequelize {
           connection.dropTable = false;
         }
       }
+
+      // Track query info if connection tracking is enabled
+      if (this.connectionManager.trackConnectionUsage) {
+        connection._query = sql;
+        connection._queryTime = Date.now();
+      }
+
       const query = new this.dialect.Query(connection, this, options);
 
       try {
@@ -649,7 +656,14 @@ class Sequelize {
         checkTransaction();
         return await query.run(sql, bindParameters);
       } finally {
+        // Clear query tracking info before releasing connection
+        if (this.connectionManager.trackConnectionUsage) {
+          connection._query = undefined;
+          connection._queryTime = undefined;
+        }
+
         await this.runHooks('afterQuery', options, query);
+        
         if (!options.transaction) {
           this.connectionManager.releaseConnection(connection);
         }
