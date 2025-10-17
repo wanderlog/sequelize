@@ -37,10 +37,6 @@ To build and release the wanderlog version:
    - Leave everything else blank
    - Click "Create release"
 
-## M1 Mac Compatibility
-
-If building this on M1 Macs, this may not work! You may need to use an x86_64 version of Homebrew and NodeJS. See https://www.notion.so/wanderlog/Installing-Intel-Homebrew-and-NodeJS-18dd57c6162d4e9a8a77823e05ecec9f
-
 # Original README
 
 <p align="center">
