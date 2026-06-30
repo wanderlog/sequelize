@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/errors/connection/connection-acquire-timeout-error.ts"],
+  "sourcesContent": ["import ConnectionError from '../connection-error';\n\n/**\n * Thrown when connection is not acquired due to timeout\n */\nclass ConnectionAcquireTimeoutError extends ConnectionError {\n  diagnostics?: string;\n\n  constructor(parent: Error, diagnostics?: string) {\n    super(parent);\n    this.name = 'SequelizeConnectionAcquireTimeoutError';\n    this.diagnostics = diagnostics;\n    \n    // Include diagnostics in the error message if provided\n    if (diagnostics) {\n      this.message = `${this.message}\\n\\n${diagnostics}`;\n    }\n  }\n}\n\nexport default ConnectionAcquireTimeoutError;\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA,8BAA4B;AAK5B,4CAA4C,gCAAgB;AAAA,EAG1D,YAAY,QAAe,aAAsB;AAC/C,UAAM;AAHR;AAIE,SAAK,OAAO;AACZ,SAAK,cAAc;AAGnB,QAAI,aAAa;AACf,WAAK,UAAU,GAAG,KAAK;AAAA;AAAA,EAAc;AAAA;AAAA;AAAA;AAK3C,IAAO,2CAAQ;",
+  "names": []
+}

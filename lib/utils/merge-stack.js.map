@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/utils/merge-stack.ts"],
+  "sourcesContent": ["// eslint-disable-next-line jsdoc/require-param\n/**\n * Uses the given `stack` derived from an `error.stack`, but overrides the\n * first line with the given message.\n */\nexport function mergeStack({\n  name,\n  message,\n  stack\n}: {\n  /** Can be omitted if the name is already included */\n  name: string | null;\n  message: string;\n  stack: string;\n}) {\n  const stackLines = stack.split('\\n');\n  // Remove the first line of the stacktrace, unless it contains the word `at`\n  if (stackLines.length > 0 && !/ *at /.test(stackLines[0])) {\n    stackLines.shift();\n  }\n  return `${name}: ${message}\\n${stackLines.join('\\n')}`;\n}\n"],
+  "mappings": ";;;;;;;AAAA;AAAA;AAAA;AAKO,oBAAoB;AAAA,EACzB;AAAA,EACA;AAAA,EACA;AAAA,GAMC;AACD,QAAM,aAAa,MAAM,MAAM;AAE/B,MAAI,WAAW,SAAS,KAAK,CAAC,QAAQ,KAAK,WAAW,KAAK;AACzD,eAAW;AAAA;AAEb,SAAO,GAAG,SAAS;AAAA,EAAY,WAAW,KAAK;AAAA;",
+  "names": []
+}
