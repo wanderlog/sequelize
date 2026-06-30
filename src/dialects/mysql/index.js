@@ -51,6 +51,7 @@ MysqlDialect.prototype.supports = _.merge(
       dropConstraint: false,
       check: false
     },
+    skipLocked: true,
     indexViaAlter: true,
     indexHints: true,
     NUMERIC: true,
