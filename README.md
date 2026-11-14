@@ -1,3 +1,12 @@
+# Wanderlog fork
+
+This is Wanderlog's fork of Sequelize. Our changes live on the
+`wanderlog` branch. See the README there for how to release a new version
+and publish it to npm as
+[`@wanderlogapp/sequelize`](https://www.npmjs.com/package/@wanderlogapp/sequelize).
+
+--------------------------------------------------------------------------------
+
 <p align="center">
   <img src="logo.svg" width="100" alt="Sequelize logo" />
   <h1 align="center"><a href="https://sequelize.org">Sequelize</a></h1>
