@@ -37,6 +37,39 @@ To build and release the wanderlog version:
    - Leave everything else blank
    - Click "Create release"
 
+## Publishing to npm
+
+We publish this fork as
+[`@wanderlogapp/sequelize`](https://www.npmjs.com/package/@wanderlogapp/sequelize).
+After the steps above, make sure `npm whoami` prints `wanderlogapp` (if not,
+run `npm login`), then run:
+
+```shell
+VERSION='<the version you just released>' # e.g., VERSION='v6.37.3-wanderlog.10'
+
+# Make sure wanderlog-built has the latest release locally
+git fetch --tags
+git checkout wanderlog-built
+git reset --hard "$VERSION"
+
+# Rename the package for npm, and set its version (without the leading v)
+npm pkg set name='@wanderlogapp/sequelize' version="${VERSION#v}"
+# Remove the prepare script: it rebuilds the package and runs husky
+npm pkg delete scripts.prepare
+
+# Commit and push the rename, so wanderlog-built matches what's on npm
+git commit -am "[$VERSION] Publish to npm as @wanderlogapp/sequelize"
+git push -f origin wanderlog-built
+
+# Publish to npm. --ignore-scripts skips the package's build and install
+# scripts, since the built files are already committed
+npm publish --access public --ignore-scripts
+```
+
+Then, in itineraries, bump the version in the `npm:@wanderlogapp/sequelize@…`
+alias and run `yarn install`. New `@wanderlogapp/*` versions skip the
+one-week age gate because of `npmPreapprovedPackages` in `.yarnrc.yml`.
+
 # Original README
 
 <p align="center">
